@@ -1,6 +1,9 @@
 # kakao_arena_melon
-
 카카오 아레나 3차 대회 - Melon Playlist Continuation
+
+### Setup
+- Language : Python 3.7.6
+- Environment : Kaggle Kernel, Google Colab
 
 ### 제출용 파일 생성
 - src/ipynb/make_result.ipynb 이용
