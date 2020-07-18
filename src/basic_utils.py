@@ -17,7 +17,8 @@
 # from collections import Counter
 # from tqdm import tqdm
 
-import json, os, io, sys, gc, time
+import json, os, io, sys, gc, time, copy, random, warnings
+warnings.filterwarnings("ignore")
 import distutils.dir_util
 import numpy as np
 import pandas as pd
@@ -79,3 +80,4 @@ def remove_seen(seen, l):
     # l에서 seen이 없는 요소 출력 (이미 존재하는 노래 및 태그 제거 위함)
     seen = set(seen)
     return [x for x in l if not (x in seen)]
+
