@@ -82,7 +82,7 @@ def remove_seen(seen, l):
     return [x for x in l if not (x in seen)]
 
 def add_var(row, var, var2, var_dict, popular_var, date):
-    # 변수 counter 생성
+    # song_tag_dict / tag_song_dict 기반 및 연도별 인기 곡/태그 추가
     var_counter = Counter()
     for v2 in row[var2]:
         if str(v2) in var_dict:
@@ -101,6 +101,7 @@ def add_var(row, var, var2, var_dict, popular_var, date):
     return var_list
 
 def add_by_cf_dic(row, cf_dic):
+    # cosine similarity 기반 곡 추가
     row_num = row['id']
     cur_song = remove_seen(row['songs'], cf_dic[row_num])[:100]
     return cur_song    
