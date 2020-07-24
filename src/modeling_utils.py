@@ -1,7 +1,7 @@
 #-*- coding:utf-8 -*-
 
 from collections import Counter
-from basic_utils import *
+from src.basic_utils import *
 
 def add_var(row, var, var2, var_dic, popular_var, date):
     # 변수 counter 생성
