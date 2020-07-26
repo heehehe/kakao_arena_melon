@@ -1,22 +1,5 @@
 #-*- coding:utf-8 -*-
 
-# import copy
-# import json
-# import random
-# import io
-# import distutils.dir_util
-# import warnings
-# warnings.filterwarnings("ignore")
-# from scipy.sparse.linalg import svds
-# from sklearn.metrics.pairwise import cosine_similarity
-# import os, sys, gc, time, warnings, pickle, psutil, random
-# import gc
-# import time
-# import numpy as np
-# import pandas as pd
-# from collections import Counter
-# from tqdm import tqdm
-
 import json, os, io, sys, gc, time, copy, random, warnings
 warnings.filterwarnings("ignore")
 import distutils.dir_util
@@ -31,18 +14,18 @@ def load_json(fname):
         json_obj = json.load(f)
     return json_obj
 
-def write_json(data, fname):
-    # json 저장하기
+def write_json(data, fname, encode='utf-8'):
+    # json utf-8로 저장하기
     def _conv(o):
         if isinstance(o, (np.int64, np.int32)):
             return int(o)
         raise TypeError
     parent = os.path.dirname(fname)
     distutils.dir_util.mkpath(parent)
-    with io.open(fname, "w", encoding="utf-8") as f:
+    with io.open(fname, "w", encoding=encode) as f:
         json_str = json.dumps(data, ensure_ascii=False, default=_conv)
         f.write(json_str)
-        
+                
 def check_target_type(df):
     # 노래 및 태그 유무에 따른 dataframe 인덱스 분할
     no_song_idx = []
