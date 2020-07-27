@@ -18,6 +18,7 @@ import tensorflow as tf
 
 
 def make_autoencoder(train_pv):
+    ### keras를 활용한 오토인코더 생성
     input_dim = train_pv.shape[1]
     c = 500
     model = Sequential()
@@ -31,7 +32,7 @@ def make_autoencoder(train_pv):
                     batch_size=256,
                     shuffle=True)
     
-#     model.summary()
+    # model.summary()
     encoder = Model(model.input, model.layers[0].output)
     encoded_imgs = encoder.predict(tmp)
     encoder.save("encoder%s" %small_years)
@@ -58,13 +59,13 @@ def make_autoencoder(train_pv):
     return cf_dic
 
 def f7(seq):
-    # list에 있는 중복 데이터는 삭제하고, 순서는 유지하는 함수
-    # set만 사용하면 순서가 뒤엉키게 됨
+    ### list에 있는 중복 데이터는 삭제하고, 순서는 유지하는 함수
     seen = set()
     seen_add = seen.add
     return [x for x in seq if not (x in seen or seen_add(x))]
 
-def make_song_by_cf(songs, date, cf_dic):
+def make_song_by_cf(songs, date, cf_dic, popular_date_song):
+    ### cf_dic를 활용한 song 채우기
     songs = [x for x in songs if x in cf_dic]
     if len(songs):
         tmp_list = []
@@ -82,11 +83,12 @@ def make_song_by_cf(songs, date, cf_dic):
         cur_song = cur_song[:200]
     return cur_song
     
-def pred_v1v3_auto(val_tmp, song_tag_dict, popular_date_tag):
+def pred_v1v3_auto(val_tmp, song_tag_dict, popular_date_song, popular_date_tag, cf_dic):
+    ### song, tag 채우기
     v1v3_predict = []
     for i in range(len(val_tmp)):
         date = date_dict[val_tmp.iloc[i]['date']]
-        cur_song = make_song_by_cf(val_tmp.iloc[i]['songs'], date, cf_dic)
+        cur_song = make_song_by_cf(val_tmp.iloc[i]['songs'], date, cf_dic, popular_date_song)
         cur_tag = add_var(val_tmp.iloc[i], 'tags', 'songs', song_tag_dict, popular_date_tag, date)
         v1v3_predict.append({
             "id" : val_tmp.iloc[i]['id'],
@@ -94,6 +96,32 @@ def pred_v1v3_auto(val_tmp, song_tag_dict, popular_date_tag):
             "tags": remove_seen(val_tmp.iloc[i]['tags'], cur_tag)[:10],
          })
     return v1v3_predict
+
+def save_pred(train, newdata, newdata_name, song_tag_dict, popular_date_song, popular_date_tag):
+    ### 전체 채우는 과정
+    train['year'] = train['updt_date'].apply( lambda x: int(x[2:4]) )
+    train['date'] = train['updt_date'].apply( lambda x: int(str(x[2:4]) + str(x[5:7])) )
+    newdata['year'] = newdata['updt_date'].apply( lambda x: int(x[2:4]) )
+    newdata['date'] = newdata['updt_date'].apply( lambda x: int(str(x[2:4]) + str(x[5:7])) )
+
+    small_years_list = [[i for i in range(4,11)], [i for i in range(11,14)],\
+                        [14], [15], [16], [17], [18], [19], [20]]
+        
+    for small_years in small_years_list:
+        if 4 in small_years:
+            train_pv = pd.read_parquet(data_path+'train_DF_%s.parquet' %[i for i in range(0,11)])
+        else:
+            train_pv = pd.read_parquet(data_path+'train_DF_%s.parquet' %small_years)
+        cf_dic = make_autoencoder(train_pv)
+        
+        no_tag, no_song, yes_index, no_both = check_target_type(newdata)
+        v1v3_index= no_tag+yes_index
+        v1v3 = newdata[newdata.index.isin(v1v3_index)]
+        new_tmp = v1v3[v1v3['year'].isin(small_years)]
+        print("val year shape", new_tmp.shape)
+        v1v3_predict = pred_v1v3_auto(new_tmp, song_tag_dict, popular_date_song, popular_date_tag, cf_dic)
+        write_json(v1v3_predict, data_path+newdata_name+'1+3_predict_auto_%s.json' %small_years)    
+        gc.collect()
 
 if __name__ == '__main__':
     data_path = 'data/'
@@ -105,43 +133,12 @@ if __name__ == '__main__':
     # tag_song_dict = load_json(data_path+'tag_song_dict.json')
     song_tag_dict = load_json(data_path+'song_tag_dict.json')
 
-    train['year'] = train['updt_date'].apply( lambda x: int(x[2:4]) )
-    train['date'] = train['updt_date'].apply( lambda x: int(str(x[2:4]) + str(x[5:7])) )
-    val['year'] = val['updt_date'].apply( lambda x: int(x[2:4]) )
-    val['date'] = val['updt_date'].apply( lambda x: int(str(x[2:4]) + str(x[5:7])) )
-    test['year'] = test['updt_date'].apply( lambda x: int(x[2:4]) )
-    test['date'] = test['updt_date'].apply( lambda x: int(str(x[2:4]) + str(x[5:7])) )
-    
     date_list = sorted(list(train['date'].unique()))
     date_dict = {}
     for i,k in enumerate(date_list):
         date_dict[k] = i
     popular_date_tag = make_popular_date_dict('tags', train, date_list, 13)
     popular_date_song = make_popular_date_dict('songs', train, date_list, 9)    
-
-    small_years_list = [[i for i in range(4,11)], [i for i in range(11,14)],\
-                        [14], [15], [16], [17], [18], [19], [20]]
-        
-    for small_years in small_years_list:
-        if 4 in small_years:
-            train_pv = pd.read_parquet(data_path+'train_DF_%s.parquet' %[i for i in range(0,11)])
-        else:
-            train_pv = pd.read_parquet(data_path+'train_DF_%s.parquet' %small_years)
-        cf_dic = make_autoencoder(train_pv)
-        #### val
-        no_tag, no_song, yes_index, no_both = check_target_type(val)
-        v1v3_index= no_tag+yes_index
-        v1v3 = val[val.index.isin(v1v3_index)]
-        val_tmp = v1v3[v1v3['year'].isin(small_years)]
-        print("val year shape", val_tmp.shape)
-        v1v3_predict = pred_v1v3_auto(val_tmp, song_tag_dict, popular_date_tag)
-        write_json(v1v3_predict, data_path+'val1+3_predict_auto_%s.json' %small_years)
-        #### test
-        no_tag, no_song, yes_index, no_both = check_target_type(test)
-        v1v3_index= no_tag+yes_index
-        v1v3 = test[test.index.isin(v1v3_index)]
-        val_tmp = v1v3[v1v3['year'].isin(small_years)]
-        print("test year shape", val_tmp.shape)
-        v1v3_predict = pred_v1v3_auto(val_tmp, song_tag_dict, popular_date_tag)
-        write_json(v1v3_predict, data_path+'test1+3_predict_auto_%s.json' %small_years)
-        
+    
+    save_pred(train, val, 'val', song_tag_dict, popular_date_song, popular_date_tag)
+    save_pred(train, test, 'test', song_tag_dict, popular_date_song, popular_date_tag)

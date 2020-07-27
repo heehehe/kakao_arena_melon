@@ -3,8 +3,10 @@
 from src.modeling_utils import *
 from khaiii import KhaiiiApi
 
-def add_tags(data)
+def add_tags(data):
+    ### khaiii를 활용한 태그 추가
     def do_khaiii_col(data):
+        ### 형태소 분석
         morphs_prep = ['']*len(data)
         for i,d in enumerate(tqdm(data)):
             list_add = []
@@ -36,6 +38,7 @@ def add_tags(data)
     return data
 
 def add_var1(date, var1, var2_list, var2_var1_dict, popular_date_var1, cur_var1):
+    ### song 또는 tag 추천
     var1_counter = Counter()
     for v2 in var2_list:
         if str(v2) in var2_var1_dict:
@@ -54,6 +57,7 @@ def add_var1(date, var1, var2_list, var2_var1_dict, popular_date_var1, cur_var1)
     return cur_var1
 
 def pred_v2(data, tag_song_dict, song_tag_dict, popular_date_song, popular_date_tag):
+    ### v2 예측
     pred_list = []
     for i in tqdm(data.index):
         date = date_dict[data.loc[i]['date']]
@@ -70,6 +74,7 @@ def pred_v2(data, tag_song_dict, song_tag_dict, popular_date_song, popular_date_
     return pred_list
 
 def pred_v4(data, tag_song_dict, song_tag_dict, popular_date_song, popular_date_tag):
+    ### v4 예측
     pred_list = []
     for i in tqdm(data.index):
         date = date_dict[data.loc[i]['date']]
@@ -84,6 +89,26 @@ def pred_v4(data, tag_song_dict, song_tag_dict, popular_date_song, popular_date_
         })
     return pred_list
 
+def save_pred(train, newdata, newdata_name, song_tag_dict, tag_song_dict, popular_date_song, popular_date_tag):
+    ### 전체 채우는 과정
+    train['date'] = train['updt_date'].apply(lambda x: int(str(x[2:4]) + str(x[5:7])) )    # 연도+월
+    train['year'] = train['updt_date'].apply(lambda x: int(x[2:4]))                        # 연도
+    newdata['date'] = newdata['updt_date'].apply(lambda x: int(str(x[2:4]) + str(x[5:7])) )
+    newdata['year'] = newdata['updt_date'].apply(lambda x: int(x[2:4]))    
+    
+    newdata = add_tags(newdata)
+    no_tag, no_song, yes_index, no_both = check_target_type(newdata)
+    v2 = newdata[newdata.index.isin(no_song)]
+    v4 = newdata[newdata.index.isin(no_both)]
+    
+    v2_predict = pred_v2(v2, tag_song_dict, song_tag_dict, popular_date_song, popular_date_tag)
+    write_json(v2_predict, data_path+newdata_name+'v2_predict.json')
+    v4_predict = pred_v4(v4, tag_song_dict, song_tag_dict, popular_date_song, popular_date_tag)
+    if newdata_name == 'test':
+        write_json(v4_predict, data_path+newdata_name+'v4_predict.json', 'utf-16')    
+    else:
+        write_json(v4_predict, data_path+newdata_name+'v4_predict.json')    
+
 if __name__ == '__main__':
     data_path = 'data/'
 
@@ -95,41 +120,5 @@ if __name__ == '__main__':
     tag_song_dict = load_json(data_path+'tag_song_dict.json')
     song_tag_dict = load_json(data_path+'song_tag_dict.json')
     
-    train['date'] = train['updt_date'].apply(lambda x: int(str(x[2:4]) + str(x[5:7])) )    # 연도+월
-    train['year'] = train['updt_date'].apply(lambda x: int(x[2:4]))                        # 연도
-    val['date'] = val['updt_date'].apply(lambda x: int(str(x[2:4]) + str(x[5:7])) )
-    val['year'] = val['updt_date'].apply(lambda x: int(x[2:4]))
-    test['date'] = test['updt_date'].apply(lambda x: int(str(x[2:4]) + str(x[5:7])) )
-    test['year'] = test['updt_date'].apply(lambda x: int(x[2:4]))
-
-    all = pd.concat([train, val, test])
-    date_list = sorted(list(all['date'].unique()))
-    date_dict = {}       # 해당 연도+월 에 index 부여(?)
-    for i,k in enumerate(date_list):
-        date_dict[k] = i
-
-    popular_date_tag = make_popular_date_dict('tags', train, date_list, 13)
-    popular_date_song = make_popular_date_dict('songs', train, date_list, 9)
-    
-    ### khaiii 활용한 plylst_title 형태소 분석 통한 태그 생성
-    val = add_tags(val)
-    test = add_tags(test)
-    
-    no_tag, no_song, yes_index, no_both = check_target_type(val)
-    val2 = val[val.index.isin(no_song)]
-    val4 = val[val.index.isin(no_both)]
-
-    no_tag, no_song, yes_index, no_both = check_target_type(test)
-    test2 = test[test.index.isin(no_song)]
-    test4 = test[test.index.isin(no_both)]
-    
-    val2_predict = pred_v2(val2, tag_song_dict, song_tag_dict, popular_date_song, popular_date_tag)
-    write_json(val2_predict, data_path+'val2_predict.json')
-
-    val4_predict = pred_v4(val4, tag_song_dict, song_tag_dict, popular_date_song, popular_date_tag)
-    write_json(val4_predict, data_path+'val4_predict.json', 'utf-16')
-    
-    test2_predict = pred_v2(test2, tag_song_dict, song_tag_dict, popular_date_song, popular_date_tag)
-    write_json(test2_predict, data_path+'test2_predict.json')
-    test4_predict = pred_v4(test4, tag_song_dict, song_tag_dict, popular_date_song, popular_date_tag)
-    write_json(test4_predict, data_path+'test4_predict.json')
+    save_pred(train, val, 'val', song_tag_dict, tag_song_dict, popular_date_song, popular_date_tag)
+    save_pred(train, test, 'test', song_tag_dict, tag_song_dict, popular_date_song, popular_date_tag)    

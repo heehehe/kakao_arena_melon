@@ -6,6 +6,7 @@ from src.pivot_utils import *
 from sklearn.metrics.pairwise import cosine_similarity
 
 def make_cosine_predict(final_result):
+    ### 코사인 유사도 활용한 id별 노래 추출
     R_df = final_result.pivot(index = 'id', columns ='song', values = 'point').fillna(0)
     del final_result
     
@@ -29,7 +30,8 @@ def make_cosine_predict(final_result):
 
     return cf_dic
 
-def pred_v1v3_cosine(val_tmp, song_tag_dict, popular_date_tag):
+def pred_v1v3_cosine(val_tmp, song_tag_dict, popular_date_tag, cf_dic):
+    ### cf_dic 활용한 추천
     v1v3_predict = []
     for i in range(len(val_tmp)):
         date = date_dict[val_tmp.iloc[i]['date']]
@@ -45,6 +47,38 @@ def pred_v1v3_cosine(val_tmp, song_tag_dict, popular_date_tag):
         })
     return v1v3_predict
 
+def save_pred(train, newdata, newdata_name, song_tag_dict, popular_date_tag):
+    ### 전체 채우는 과정
+    train['year'] = train['updt_date'].apply( lambda x: int(x[2:4]) )
+    train['date'] = train['updt_date'].apply( lambda x: int(str(x[2:4]) + str(x[5:7])) )
+    newdata['year'] = newdata['updt_date'].apply( lambda x: int(x[2:4]) )
+    newdata['date'] = newdata['updt_date'].apply( lambda x: int(str(x[2:4]) + str(x[5:7])) )
+
+    small_years_list = [[i for i in range(4,11)], [i for i in range(11,14)],\
+                        [14], [15], [16], [17], [18], [19], [20]]
+        
+    for small_years in small_years_list:    
+        no_tag, no_song, yes_index, no_both = check_target_type(newdata)
+        v1v3_index = no_tag + yes_index
+        v1v3 = newdata[newdata.index.isin(v1v3_index)]
+        new_tmp = v1v3[v1v3['year'].isin(small_years)]
+        tmp = train[(train['year'].isin(small_years))]
+        
+        like_num = int(np.percentile(tmp['like_cnt'], 70))
+        tmp = tmp[(tmp['like_cnt'] > like_num)]
+        before_tmp = before_pivot(tmp)
+        tmp_dict = before_tmp['song'].value_counts().to_dict()
+        before_tmp['count']= before_tmp['song'].apply(lambda x : tmp_dict[x])
+        before_tmp = before_tmp[before_tmp['count'] > 1]
+        before_new_tmp = before_pivot(new_tmp)
+        final_result = pd.concat([before_tmp, before_new_tmp])
+        del before_tmp, before_new_tmp
+        gc.collect()
+        
+        cf_dic = make_cosine_predict(final_result)
+        v1v3_predict = pred_v1v3_cosine(new_tmp, song_tag_dict, popular_date_tag, cf_dic)
+        write_json(v1v3_predict, data_path+newdata_name+'1+3_predict_cosine_%s.json' %str(small_years))        
+    
 
 if __name__ == '__main__':
     data_path = 'data/'
@@ -55,13 +89,6 @@ if __name__ == '__main__':
     # genre_gn_all = pd.read_json(data_path+'genre_gn_all.json', typ = 'series')
     # tag_song_dict = load_json(data_path+'tag_song_dict.json')
     song_tag_dict = load_json(data_path+'song_tag_dict.json')
-    
-    train['year'] = train['updt_date'].apply(lambda x: int(x[2:4]))
-    train['date'] = train['updt_date'].apply(lambda x: int(str(x[2:4]) + str(x[5:7])) )
-    val['year'] = val['updt_date'].apply(lambda x: int(x[2:4]))
-    val['date'] = val['updt_date'].apply(lambda x: int(str(x[2:4]) + str(x[5:7])) )
-    test['year'] = test['updt_date'].apply( lambda x: int(x[2:4]) )
-    test['date'] = test['updt_date'].apply( lambda x: int(str(x[2:4]) + str(x[5:7])) )
 
     date_list = sorted(list(train['date'].unique()))
     date_dict = {}
@@ -69,50 +96,8 @@ if __name__ == '__main__':
         date_dict[k] = i
 
     popular_date_tag = make_popular_date_dict('tags', train, date_list, 13)
-    popular_date_song = make_popular_date_dict('songs', train, date_list, 9)      
-        
-    small_years_list = [[i for i in range(4,11)], [i for i in range(11,14)],\
-                        [14], [15], [16], [17], [18], [19], [20]]
+#     popular_date_song = make_popular_date_dict('songs', train, date_list, 9)         
     
-    for small_years in small_years_list:
-        #### val
-        no_tag, no_song, yes_index, no_both = check_target_type(val)
-        v1v3_index = no_tag + yes_index
-        v1v3 = val[val.index.isin(v1v3_index)]
-        val_tmp = v1v3[v1v3['year'].isin(small_years)]
-        tmp = train[(train['year'].isin(small_years))]
-        
-        like_num = int(np.percentile(tmp['like_cnt'], 70))
-        tmp = tmp[(tmp['like_cnt'] > like_num)]
-        before_tmp = before_pivot(tmp)
-        tmp_dict = before_tmp['song'].value_counts().to_dict()
-        before_tmp['count']= before_tmp['song'].apply(lambda x : tmp_dict[x])
-        before_tmp = before_tmp[before_tmp['count'] > 1]
-        before_val_tmp = before_pivot(val_tmp)
-        final_result = pd.concat([before_tmp, before_val_tmp])
-        del before_tmp, before_val_tmp
-        gc.collect()
-        cf_dic = make_cosine_predict(final_result)
-        v1v3_predict = pred_v1v3_cosine(val_tmp, song_tag_dict, popular_date_tag)
-        write_json(v1v3_predict, data_path+'val1+3_predict_cosine_%s.json' %str(small_years))
-        
-        #### test
-        no_tag, no_song, yes_index, no_both = check_target_type(test)
-        v1v3_index = no_tag + yes_index
-        v1v3 = val[val.index.isin(v1v3_index)]
-        val_tmp = v1v3[v1v3['year'].isin(small_years)]
-        tmp = train[(train['year'].isin(small_years))]
-        
-        like_num = int(np.percentile(tmp['like_cnt'], 70))
-        tmp = tmp[(tmp['like_cnt'] > like_num)]
-        before_tmp = before_pivot(tmp)
-        tmp_dict = before_tmp['song'].value_counts().to_dict()
-        before_tmp['count']= before_tmp['song'].apply(lambda x : tmp_dict[x])
-        before_tmp = before_tmp[before_tmp['count'] > 1]
-        before_val_tmp = before_pivot(val_tmp)
-        final_result = pd.concat([before_tmp, before_val_tmp])
-        del before_tmp, before_val_tmp
-        gc.collect()
-        cf_dic = make_cosine_predict(final_result)
-        v1v3_predict = pred_v1v3_cosine(val_tmp, song_tag_dict, popular_date_tag)
-        write_json(v1v3_predict, data_path+'test1+3_predict_cosine_%s.json' %str(small_years))
+    save_pred(train, val, 'val', song_tag_dict, popular_date_tag)
+    save_pred(train, test, 'test', song_tag_dict, popular_date_tag)    
+    
