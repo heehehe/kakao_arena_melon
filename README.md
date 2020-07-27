@@ -13,4 +13,4 @@
 ```
 > bash run.sh
 ```
-- 코드 상세 내역은 [wiki](https://github.com/heehehe/kakao_arena_melon/wiki/code-%EC%84%A4%EB%AA%85) 참고
+- 코드 상세 내역 및 모델링 과정은 [wiki](https://github.com/heehehe/kakao_arena_melon/wiki) 참고
