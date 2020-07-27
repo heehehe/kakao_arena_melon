@@ -25,18 +25,28 @@ def mix_auto_cosine(final_auto, final_cosine):
     return final_all
 
 if __name__ == '__main__':
-    data_path = sys.argv[1]
-    save_path = sys.argv[2]
-    auto_path = data_path+'../v1v3_auto*.json'
-    cosine_path = data_path+'../v1v3_cosine*.json'
-    
-    result_auto = make_result(auto_path)
-    result_cosine = make_result(cosine_path)
-    result_mix = mix_auto_cosine(result_auto, result_cosine)
-    write_json(data_path+'v1v3_predict.json')
-    result_all = make_result(data_path)
+    data_path = 'data/'
+
+    val_auto_path = data_path+'val1+3*_auto*.json'
+    val_cosine_path = data_path+'val1+3*_cosine*.json'    
+    val_result_auto = make_result(val_auto_path)
+    val_result_cosine = make_result(val_cosine_path)
+    val_result_mix = mix_auto_cosine(result_auto, result_cosine)
+    write_json(data_path+'val1+3_predict.json')
+    val_result_all = make_result(data_path+'val*_predict.json')
     try:
-        write_json(data_path+'*.json', save_path)
+        write_json(val_result_all, data_path+'val_result.json')
     except:
-        write_json(data_path+'*.json', save_path, 'utf-16')
-    
+        write_json(val_result_all, data_path+'val_result.json', 'utf-16')
+
+    val_auto_path = data_path+'test1+3*_auto*.json'
+    val_cosine_path = data_path+'test1+3*_cosine*.json'
+    val_result_auto = make_result(val_auto_path)
+    val_result_cosine = make_result(val_cosine_path)
+    val_result_mix = mix_auto_cosine(result_auto, result_cosine)
+    write_json(data_path+'test1+3_predict.json')
+    val_result_all = make_result(data_path+'test*_predict.json')
+    try:
+        write_json(val_result_all, data_path+'result.json')
+    except:
+        write_json(val_result_all, data_path+'result.json', 'utf-16')

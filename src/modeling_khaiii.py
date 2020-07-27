@@ -124,12 +124,12 @@ if __name__ == '__main__':
     test4 = test[test.index.isin(no_both)]
     
     val2_predict = pred_v2(val2, tag_song_dict, song_tag_dict, popular_date_song, popular_date_tag)
-    write_json(val2_predict, data_path+'results/val/val2_predict_withTitle.json')
+    write_json(val2_predict, data_path+'val2_predict.json')
 
     val4_predict = pred_v4(val4, tag_song_dict, song_tag_dict, popular_date_song, popular_date_tag)
-    write_json(val4_predict, data_path+'results/val/val4_predict_withTitle.json', 'utf-16')
+    write_json(val4_predict, data_path+'val4_predict.json', 'utf-16')
     
     test2_predict = pred_v2(test2, tag_song_dict, song_tag_dict, popular_date_song, popular_date_tag)
-    write_json(test2_predict, data_path+'results/test/test2_predict_withTitle.json')
+    write_json(test2_predict, data_path+'test2_predict.json')
     test4_predict = pred_v4(test4, tag_song_dict, song_tag_dict, popular_date_song, popular_date_tag)
-    write_json(test4_predict, data_path+'results/test/test4_predict_withTitle.json')
+    write_json(test4_predict, data_path+'test4_predict.json')

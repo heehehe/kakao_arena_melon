@@ -47,9 +47,9 @@ if __name__ == '__main__':
     for i in tqdm(test.index):
         test.loc[i]['tags'] = list(map(lambda x:x.lower(),test.loc[i]['tags']))    
         
-    train.to_parquet('train(song_trim).parquet')
-    val.to_json('val(lower).json', orient='records')
-    test.to_json('test(lower).json', orient='records')
+    train.to_parquet(data_path+'train(song_trim).parquet')
+    val.to_json(data_path+'val(lower).json', orient='records')
+    test.to_json(data_path+'test(lower).json', orient='records')
     
     ## song_tag_dict / tag_song_dict 생성
     train_tmp = train[['tags', 'songs']]

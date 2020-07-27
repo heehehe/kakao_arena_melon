@@ -43,7 +43,6 @@ def make_pv_file(train, small_years, thres, data_path):
     ## TRAIN
     print("train only year", train[(train['year'].isin(small_years))].shape)
     train_tmp = train[(train['year'].isin(small_years))]
-    
     train_tmp = train_tmp[(train_tmp['like_cnt'] > 0)]
     train_tmp.reset_index(inplace = True, drop = True)
     print("train best playlist", train_tmp.shape)
