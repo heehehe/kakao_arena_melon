@@ -99,5 +99,5 @@ if __name__ == '__main__':
     cf_dic = make_cosine_predict(final_result)
     
     v1v3_predict = pred_v1v3_cosine(val_tmp, song_tag_dict, popular_date_tag)
-    write_json(v1v3_predict, data_path+'v1v3_'+str(small_years)+'.json')
+    write_json(v1v3_predict, data_path+'results/v1v3_cosine_%s_predict.json' %str(small_years))
     

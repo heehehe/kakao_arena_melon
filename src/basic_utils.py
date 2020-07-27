@@ -8,9 +8,9 @@ import pandas as pd
 from collections import Counter
 from tqdm import tqdm
 
-def load_json(fname):
+def load_json(fname, encode='utf-8'):
     # json 불러오기
-    with open(fname, encoding="utf-8") as f:
+    with open(fname, encoding=encode) as f:
         json_obj = json.load(f)
     return json_obj
 
@@ -34,13 +34,13 @@ def check_target_type(df):
     yes_all_idx = []
     for i in df.index:
         ### v1 : 노래 O 태그 X
-        if bool(df.loc[i:i, 'songs'].values[0])       & bool(not df.loc[i:i, 'tags'].values[0]):
+        if bool(df.loc[i:i, 'songs'].values[0]) & bool(not df.loc[i:i, 'tags'].values[0]):
             no_tag_idx.append(i)
         ### v2 : 노래 X 태그 O
         elif bool(not df.loc[i:i, 'songs'].values[0]) & bool(df.loc[i:i, 'tags'].values[0]):
             no_song_idx.append(i)
         ### v3 : 노래 O 태그 O
-        elif bool(df.loc[i:i, 'songs'].values[0])     & bool(df.loc[i:i, 'tags'].values[0]):
+        elif bool(df.loc[i:i, 'songs'].values[0]) & bool(df.loc[i:i, 'tags'].values[0]):
             yes_all_idx.append(i)          
         ### v4 : 노래 X 태그 X
         else:
@@ -63,28 +63,3 @@ def remove_seen(seen, l):
     # l에서 seen이 없는 요소 출력 (이미 존재하는 노래 및 태그 제거 위함)
     seen = set(seen)
     return [x for x in l if not (x in seen)]
-
-def add_var(row, var, var2, var_dict, popular_var, date):
-    # song_tag_dict / tag_song_dict 기반 및 연도별 인기 곡/태그 추가
-    var_counter = Counter()
-    for v2 in row[var2]:
-        if str(v2) in var_dict:
-            for v1 in var_dict[str(v2)]:
-                var_counter.update({v1 : 1})
-    var_counter = sorted(var_counter.items(), key=lambda x : x[1], reverse=True)
-    var_list = []
-    for k in var_counter[:100]:
-        var_list.append(k[0])
-    if len(var_list) == 100:
-        var_list = popular_var[date][var][:100]
-    elif len(var_list) < 100:
-        var_list_update = remove_seen(var_list, popular_var[date][var])
-        var_list.extend(var_list_update)
-        var_list = var_list[:100]
-    return var_list
-
-def add_by_cf_dic(row, cf_dic):
-    # cosine similarity 기반 곡 추가
-    row_num = row['id']
-    cur_song = remove_seen(row['songs'], cf_dic[row_num])[:100]
-    return cur_song    

@@ -39,7 +39,7 @@ def make_use_song(train_tmp, thres):
     gc.collect()
     return use_song
 
-def make_pv_file(train, small_years, thres):
+def make_pv_file(train, small_years, thres, data_path):
     ## TRAIN
     print("train only year", train[(train['year'].isin(small_years))].shape)
     train_tmp = train[(train['year'].isin(small_years))]
@@ -60,12 +60,11 @@ def make_pv_file(train, small_years, thres):
     train_df.columns = train_df.columns.astype(str)
     print("최종 shape : ", train_df.shape)
     
-    train_df.to_parquet('train_DF_%s.parquet' %small_years)
+    train_df.to_parquet(data_path+'train_DF_%s.parquet' %small_years)
     del train_df
     gc.collect()
 
 if __name__ == '__main__':
-    os.chdir('../')
     data_path = 'data/'
     train = pd.read_parquet(data_path+'train(song_trim).parquet')
     train['year'] = train['updt_date'].apply(lambda x: int(x[2:4]))
@@ -76,4 +75,4 @@ if __name__ == '__main__':
                   ([18], 4), ([19], 5), ([20], 2)]
     
     for small_years, thres in year_thres:
-        make_pv_file(train, small_years, thres)
+        make_pv_file(train, small_years, thres, data_path)

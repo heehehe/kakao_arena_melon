@@ -1,39 +1,42 @@
 #-*- coding:utf-8 -*-
 
-import io, os, json, random, copy
-import distutils.dir_util
-import warnings
-warnings.filterwarnings("ignore")
-
-import numpy as np
-import pandas as pd
-from collections import Counter
-from tqdm import tqdm
+from src.basic_utils import *
 import glob
 
-def load_json(fname):
-    with open(fname, encoding="utf-8") as f:
-        json_obj = json.load(f)
-    return json_obj
-
-def write_json(data, fname):
-    def _conv(o):
-        if isinstance(o, (np.int64, np.int32)):
-            return int(o)
-        raise TypeError
-    parent = os.path.dirname(fname)
-    distutils.dir_util.mkpath(parent)
-    with io.open(fname, "w", encoding="utf-8") as f:
-        json_str = json.dumps(data, ensure_ascii=False, default=_conv)
-        f.write(json_str)
-        
-def make_result(data_path, save_path):
+def make_result(data_path):
     csvfiles, result = [], []
-    for file in glob.glob():
+    for file in glob.glob(data_path):
         csvfiles.append(file)
     for i in csvfiles:
-        result.extend(load_json(i))
-    write_json(result, save_path)
+        try: result.extend(load_json(i))
+        except: result.extend(load_json(i, 'utf-16'))
+    return result
+
+def mix_auto_cosine(final_auto, final_cosine):
+    final_all = []
+    for i in tqdm(range(len(final_auto))):
+        for j in range(len(final_cosine)):
+            if final_auto[i]['id'] == final_cosine[j]['id']:
+                final_all.append({
+                    "id" : final_auto[i]['id'],
+                    "songs": final_cosine[j]['songs'],
+                    "tags": final_auto[i]['tags'],
+                })
+    return final_all
 
 if __name__ == '__main__':
-    make_result(sys.argv[1], sys.argv[2])
+    data_path = sys.argv[1]
+    save_path = sys.argv[2]
+    auto_path = data_path+'../v1v3_auto*.json'
+    cosine_path = data_path+'../v1v3_cosine*.json'
+    
+    result_auto = make_result(auto_path)
+    result_cosine = make_result(cosine_path)
+    result_mix = mix_auto_cosine(result_auto, result_cosine)
+    write_json(data_path+'v1v3_predict.json')
+    result_all = make_result(data_path)
+    try:
+        write_json(data_path+'*.json', save_path)
+    except:
+        write_json(data_path+'*.json', save_path, 'utf-16')
+    

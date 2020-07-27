@@ -134,4 +134,4 @@ if __name__ == '__main__':
     popular_date_song = make_popular_date_dict('songs', train, date_list, 9)
     
     v1v3_predict = pred_v1v3_auto(val_tmp, song_tag_dict, popular_date_tag)
-    write_json(v1v3_predict, data_path+'v1v3_%s_predict.json' %small_years)
+    write_json(v1v3_predict, data_path+'results/v1v3_auto_%s_predict.json' %small_years)

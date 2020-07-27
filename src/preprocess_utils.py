@@ -1,6 +1,5 @@
 #-*- coding:utf-8 -*-
 
-import os
 from src.basic_utils import *
 
 def update_song(data, all_song):
@@ -38,15 +37,15 @@ if __name__ == '__main__':
     
     ## 삭제 작업
     for i in tqdm(train.index):
-        train.loc[i:i]['songs'].values[0] = list(set(train.loc[i:i]['songs'].values[0]) & set(use_song))
-        train.loc[i:i]['tags'].values[0] = list(map(lambda x:x.lower(),train.loc[i:i]['tags'].values[0]))
+        train.loc[i]['songs'] = list(set(train.loc[i]['songs']) & set(use_song))
+        train.loc[i]['tags'] = list(map(lambda x:x.lower(),train.loc[i]['tags']))
 
     ## val, test도 동일하게 tag에서 대문자를 소문자로 바꿔준다. 
     for i in tqdm(val.index):
-        val.loc[i:i]['tags'].values[0] = list(map(lambda x:x.lower(),val.loc[i:i]['tags'].values[0]))
+        val.loc[i]['tags'] = list(map(lambda x:x.lower(),val.loc[i]['tags']))
 
     for i in tqdm(test.index):
-        test.loc[i:i]['tags'].values[0] = list(map(lambda x:x.lower(),test.loc[i:i]['tags'].values[0]))    
+        test.loc[i]['tags'] = list(map(lambda x:x.lower(),test.loc[i]['tags']))    
         
     train.to_parquet('train(song_trim).parquet')
     val.to_json('val(lower).json', orient='records')
