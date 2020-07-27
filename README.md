@@ -1,12 +1,15 @@
 # kakao_arena_melon
 카카오 아레나 3차 대회 - Melon Playlist Continuation
 
-### Setup
+### 1. Introduction
+플레이리스트에 수록된 곡과 태그의 절반 또는 전부가 숨겨져 있을 때, 주어지지 않은 곡들과 태그를 예측하는 모델 생성
+
+### 2. Setup
 - Language : Python 3.7.6
 - Environment : Kaggle Kernel, Google Colab
 
-### 제출용 파일 생성
-- src/ipynb/make_result.ipynb 이용
-- OR run.sh에서 저장된 파일 경로 및 저장할 경로 FILE_PATH, SAVE_PATH에 설정 후 ```bash run.sh``` 실행
-  - 확인해보지 않은 방식으로 우선 ipynb 이용하기
-- notion 제출물 > 파일 제출시 사용 코드 참고
+### 3. Process
+
+```
+> bash run.sh
+```
